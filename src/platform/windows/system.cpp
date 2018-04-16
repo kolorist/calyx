@@ -5,11 +5,16 @@
 #include <Allocator.h>
 #include <MemoryManager.h>
 
+#include <Logger.h>
+#include <SinkTopic.h>
+#include <VSOutputSink.h>
+
 #include <TaskManager.h>
 
 #include <Windows.h>
 
 #include "context.h"
+#include "life_cycle.h"
 
 namespace calyx {
 namespace platform {
@@ -18,9 +23,57 @@ namespace windows {
 	static HWND									s_hwnd;
 	static bool									s_running;
 
+	floral::thread								s_main_thread;
+
 	LRESULT CALLBACK window_proc(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
 	{
+		LOG_TOPIC("platform_event");
+		// NOTE: please note that sizeof(WPARAM) and sizeof(LPARAM) in 32-bit system is 32-bit while in 64-bit system
+		// they are both 64-bit accordingly
 		switch (i_msg) {
+			case WM_LBUTTONDOWN:
+				{
+					CLOVER_VERBOSE("Mouse left: DOWN");
+					break;
+				}
+			case WM_LBUTTONUP:
+				{
+					CLOVER_VERBOSE("Mouse left: UP");
+					break;
+				}
+			case WM_RBUTTONDOWN:
+				{
+					CLOVER_VERBOSE("Mouse right: DOWN");
+					break;
+				}
+			case WM_RBUTTONUP:
+				{
+					CLOVER_VERBOSE("Mouse right: UP");
+					break;
+				}
+			case WM_MOUSEMOVE:
+				{
+					u32 x = (u32)(i_lparam & 0xFFFF);
+					u32 y = (u32)((i_lparam & 0xFFFF0000) >> 16);
+					// NOTE: log spamming!!!
+					//CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
+					break;
+				}
+			case WM_MOUSEWHEEL:
+				{
+					// NOTE: signed-int bit shifting is implementation-dependant
+					//s32 delta = (s32)((i_wparam & 0xFFFF0000) >> 16);
+					s32 delta = (s32)(i_wparam & 0xFFFF0000) / 65536;
+					f32 deltaF = (f32)delta / 120.0f;
+					CLOVER_VERBOSE("Mouse wheel delta: %4.2f", deltaF);
+					break;
+				}
+			case WM_CHAR:
+				{
+					u32 keyCode = (u32)i_wparam;
+					CLOVER_VERBOSE("Character received: 0x%x - ASCII: '%c'", keyCode, (c8)keyCode);
+					break;
+				}
 			case WM_DESTROY:
 				{
 					PostQuitMessage(0);
@@ -57,11 +110,20 @@ namespace windows {
 		// init essential systems
 		// helich
 		helich::init_memory_system();
+		clover::InitializeVSOutput("vs", clover::LogLevel::Verbose);
 
 		// init sub-systems
 		g_subsystems.task_manager = g_allocators.subsystems_allocator.allocate<refrain2::TaskManager>();
 		g_subsystems.task_manager->Initialize(2);
 		g_subsystems.task_manager->StartAllTaskingThreads();
+
+		// log window configs
+		CLOVER_VERBOSE("Window Title: %s", g_context_attribs.window_title);
+		CLOVER_VERBOSE("Window Position: offset (%d; %d), rect (%d; %d)",
+				g_context_attribs.window_offset_left,
+				g_context_attribs.window_offset_top,
+				g_context_attribs.window_width,
+				g_context_attribs.window_height);
 
 		// now create the window
 		HINSTANCE hInst = GetModuleHandle(0);
@@ -102,11 +164,17 @@ namespace windows {
 		ShowWindow(s_hwnd, SW_SHOWNORMAL);
 		UpdateWindow(s_hwnd);
 
+		// kick off s_main_thread
+		s_main_thread.entry_point = &calyx::main_thread_func;
+		s_main_thread.ptr_data = nullptr;
+		s_main_thread.start();
+
 		MSG msg;
 		s_running = true;
 		while (s_running) {
 			// platform events
-			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+			//if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+			if (GetMessage(&msg, nullptr, 0, 0)) {
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}

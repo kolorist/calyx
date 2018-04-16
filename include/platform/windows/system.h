@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdaliases.h>
+#include <thread/Thread.h>
 
 namespace calyx {
 namespace platform {
