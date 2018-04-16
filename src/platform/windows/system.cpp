@@ -24,6 +24,7 @@ namespace windows {
 	static bool									s_running;
 
 	floral::thread								s_main_thread;
+	event_buffer_t								s_event_buffer;
 
 	LRESULT CALLBACK window_proc(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
 	{
@@ -34,21 +35,25 @@ namespace windows {
 			case WM_LBUTTONDOWN:
 				{
 					CLOVER_VERBOSE("Mouse left: DOWN");
+					s_event_buffer.push(1);
 					break;
 				}
 			case WM_LBUTTONUP:
 				{
 					CLOVER_VERBOSE("Mouse left: UP");
+					s_event_buffer.push(2);
 					break;
 				}
 			case WM_RBUTTONDOWN:
 				{
 					CLOVER_VERBOSE("Mouse right: DOWN");
+					s_event_buffer.push(3);
 					break;
 				}
 			case WM_RBUTTONUP:
 				{
 					CLOVER_VERBOSE("Mouse right: UP");
+					s_event_buffer.push(4);
 					break;
 				}
 			case WM_MOUSEMOVE:
@@ -56,7 +61,8 @@ namespace windows {
 					u32 x = (u32)(i_lparam & 0xFFFF);
 					u32 y = (u32)((i_lparam & 0xFFFF0000) >> 16);
 					// NOTE: log spamming!!!
-					//CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
+					CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
+					s_event_buffer.push(6);
 					break;
 				}
 			case WM_MOUSEWHEEL:
@@ -72,6 +78,7 @@ namespace windows {
 				{
 					u32 keyCode = (u32)i_wparam;
 					CLOVER_VERBOSE("Character received: 0x%x - ASCII: '%c'", keyCode, (c8)keyCode);
+					s_event_buffer.push(5);
 					break;
 				}
 			case WM_DESTROY:
@@ -164,9 +171,12 @@ namespace windows {
 		ShowWindow(s_hwnd, SW_SHOWNORMAL);
 		UpdateWindow(s_hwnd);
 
+		// setup event buffer
+		s_event_buffer.assign_allocator(&g_allocators.subsystems_allocator);
+
 		// kick off s_main_thread
 		s_main_thread.entry_point = &calyx::main_thread_func;
-		s_main_thread.ptr_data = nullptr;
+		s_main_thread.ptr_data = &s_event_buffer;
 		s_main_thread.start();
 
 		MSG msg;

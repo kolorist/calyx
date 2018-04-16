@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdaliases.h>
+#include <containers/ring_buffer.h>
 
 #include <Allocator.h>
 #include <AllocSchemes.h>
@@ -20,6 +21,8 @@ namespace calyx {
 
 	// allocators
 	typedef helich::allocator<helich::stack_scheme, helich::no_tracking_policy>	stack_allocator_t;
+	
+	typedef floral::ring_buffer_mt<u32, stack_allocator_t, 32>				event_buffer_t;
 
 	// ***
 	// user-provided
