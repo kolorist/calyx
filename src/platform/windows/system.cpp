@@ -23,8 +23,8 @@ namespace windows {
 	static HWND									s_hwnd;
 	static bool									s_running;
 
-	floral::thread								s_main_thread;
-	event_buffer_t								s_event_buffer;
+	static floral::thread						s_main_thread;
+	static event_buffer_t						s_event_buffer;
 
 	LRESULT CALLBACK window_proc(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
 	{
