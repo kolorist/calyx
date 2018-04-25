@@ -51,6 +51,7 @@ target_link_libraries (${PROJECT_NAME}
 	floral
 	helich
 	clover
+	insigne
 	refrain2)
 
 target_include_directories (${PROJECT_NAME} PUBLIC

@@ -22,7 +22,7 @@ namespace calyx {
 	// allocators
 	typedef helich::allocator<helich::stack_scheme, helich::no_tracking_policy>	stack_allocator_t;
 	
-	typedef floral::ring_buffer_mt<u32, stack_allocator_t, 32>				event_buffer_t;
+	typedef floral::ring_buffer_mt<u32, stack_allocator_t, 256>				event_buffer_t;
 
 	// ***
 	// user-provided

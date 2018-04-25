@@ -16,6 +16,11 @@
 #include "context.h"
 #include "life_cycle.h"
 
+//test
+#include <insigne/driver.h>
+#include <insigne/render.h>
+#include <insigne/buffers.h>
+
 namespace calyx {
 namespace platform {
 namespace windows {
@@ -38,24 +43,28 @@ namespace windows {
 					s_event_buffer.push(1);
 					break;
 				}
+
 			case WM_LBUTTONUP:
 				{
 					CLOVER_VERBOSE("Mouse left: UP");
 					s_event_buffer.push(2);
 					break;
 				}
+
 			case WM_RBUTTONDOWN:
 				{
 					CLOVER_VERBOSE("Mouse right: DOWN");
 					s_event_buffer.push(3);
 					break;
 				}
+
 			case WM_RBUTTONUP:
 				{
 					CLOVER_VERBOSE("Mouse right: UP");
 					s_event_buffer.push(4);
 					break;
 				}
+
 			case WM_MOUSEMOVE:
 				{
 					u32 x = (u32)(i_lparam & 0xFFFF);
@@ -63,8 +72,12 @@ namespace windows {
 					// NOTE: log spamming!!!
 					CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
 					s_event_buffer.push(6);
+					insigne::render_command cmd;
+					cmd.opcode = insigne::command::draw_geom_index;
+					insigne::push_command(cmd);
 					break;
 				}
+
 			case WM_MOUSEWHEEL:
 				{
 					// NOTE: signed-int bit shifting is implementation-dependant
@@ -74,6 +87,7 @@ namespace windows {
 					CLOVER_VERBOSE("Mouse wheel delta: %4.2f", deltaF);
 					break;
 				}
+
 			case WM_CHAR:
 				{
 					u32 keyCode = (u32)i_wparam;
@@ -81,21 +95,25 @@ namespace windows {
 					s_event_buffer.push(5);
 					break;
 				}
+
 			case WM_DESTROY:
 				{
 					PostQuitMessage(0);
 					s_running = false;
 					break;
 				}
+
 			case WM_CREATE:
 				{
 					break;
 				}
+
 			case WM_SIZE:
 				{
 					InvalidateRgn(s_hwnd, 0, 0);
 					break;
 				}
+				
 			case WM_PAINT:
 				{
 					PAINTSTRUCT paintStruct;
@@ -103,10 +121,12 @@ namespace windows {
 					EndPaint(s_hwnd, &paintStruct);
 					break;
 				}
+
 			default:
 				{
 					return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
 				}
+
 		}
 		return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
 	}
@@ -119,7 +139,7 @@ namespace windows {
 		helich::init_memory_system();
 		clover::InitializeVSOutput("vs", clover::LogLevel::Verbose);
 
-		// init sub-systems
+		// init sub-systems: generic worker threads
 		g_subsystems.task_manager = g_allocators.subsystems_allocator.allocate<refrain2::TaskManager>();
 		g_subsystems.task_manager->Initialize(2);
 		g_subsystems.task_manager->StartAllTaskingThreads();
@@ -164,6 +184,11 @@ namespace windows {
 				WS_OVERLAPPEDWINDOW,
 				r.left, r.top, r.right - r.left, r.bottom - r.top,
 				nullptr, nullptr, hInst, nullptr);
+
+		insigne::initialize_driver(s_hwnd);
+		insigne::initialize_render_thread();
+		insigne::wait_for_initialization();
+
 	}
 
 	void run()
