@@ -1,27 +1,20 @@
 #include "platform/windows/system.h"
 
-#include <stdaliases.h>
-
-#include <Allocator.h>
-#include <MemoryManager.h>
+#include <helich.h>
+#include <refrain2.h>
 
 #include <Logger.h>
 #include <SinkTopic.h>
 #include <VSOutputSink.h>
 
-#include <TaskManager.h>
+#include "life_cycle.h"
 
 #include <Windows.h>
 
-#include "context.h"
-#include "life_cycle.h"
-
-//test
-#include <insigne/driver.h>
-#include <insigne/render.h>
-#include <insigne/buffers.h>
-
 namespace calyx {
+
+	windows_context_attribs						g_windows_context_attribs;
+
 namespace platform {
 namespace windows {
 
@@ -72,9 +65,6 @@ namespace windows {
 					// NOTE: log spamming!!!
 					CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
 					s_event_buffer.push(6);
-					insigne::render_command cmd;
-					cmd.opcode = insigne::command::draw_geom_index;
-					insigne::push_command(cmd);
 					break;
 				}
 
@@ -145,12 +135,12 @@ namespace windows {
 		g_subsystems.task_manager->StartAllTaskingThreads();
 
 		// log window configs
-		CLOVER_VERBOSE("Window Title: %s", g_context_attribs.window_title);
+		CLOVER_VERBOSE("Window Title: %s", g_windows_context_attribs.window_title);
 		CLOVER_VERBOSE("Window Position: offset (%d; %d), rect (%d; %d)",
-				g_context_attribs.window_offset_left,
-				g_context_attribs.window_offset_top,
-				g_context_attribs.window_width,
-				g_context_attribs.window_height);
+				g_windows_context_attribs.window_offset_left,
+				g_windows_context_attribs.window_offset_top,
+				g_windows_context_attribs.window_width,
+				g_windows_context_attribs.window_height);
 
 		// now create the window
 		HINSTANCE hInst = GetModuleHandle(0);
@@ -171,24 +161,23 @@ namespace windows {
 		RegisterClassEx(&winClass);
 
 		RECT r;
-		r.left = g_context_attribs.window_offset_left;
-		r.top = g_context_attribs.window_offset_top;
-		r.right = g_context_attribs.window_width + g_context_attribs.window_offset_left;
-		r.bottom = g_context_attribs.window_height + g_context_attribs.window_offset_top;
+		r.left = g_windows_context_attribs.window_offset_left;
+		r.top = g_windows_context_attribs.window_offset_top;
+		r.right = g_windows_context_attribs.window_width + g_windows_context_attribs.window_offset_left;
+		r.bottom = g_windows_context_attribs.window_height + g_windows_context_attribs.window_offset_top;
 		AdjustWindowRectEx(&r, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
 
 		s_hwnd = CreateWindowEx(
 				WS_EX_OVERLAPPEDWINDOW,
 				TEXT("Amborella"),
-				TEXT(g_context_attribs.window_title),
+				TEXT(g_windows_context_attribs.window_title),
 				WS_OVERLAPPEDWINDOW,
 				r.left, r.top, r.right - r.left, r.bottom - r.top,
 				nullptr, nullptr, hInst, nullptr);
 
-		insigne::initialize_driver(s_hwnd);
-		insigne::initialize_render_thread();
-		insigne::wait_for_initialization();
-
+		// init global variables
+		g_windows_context_attribs.hwnd = s_hwnd;
+		g_context_attribs = static_cast<context_attribs*>(&g_windows_context_attribs);
 	}
 
 	void run()

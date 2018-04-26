@@ -36,7 +36,7 @@ namespace calyx {
 		refrain2::TaskManager*					task_manager;
 	};
 
-	extern context_attribs						g_context_attribs;
+	extern context_attribs*						g_context_attribs;
 	extern allocators							g_allocators;
 	extern subsystems							g_subsystems;
 

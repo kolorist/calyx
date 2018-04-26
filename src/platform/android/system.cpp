@@ -13,6 +13,9 @@
 #include "life_cycle.h"
 
 namespace calyx {
+
+	android_context_attribs						g_android_context_attribs;
+
 namespace platform {
 namespace android {
 
@@ -37,12 +40,15 @@ namespace android {
 		g_subsystems.task_manager->StartAllTaskingThreads();
 
 		// log window configs
-		CLOVER_VERBOSE("Window Title: %s", g_context_attribs.window_title);
+		CLOVER_VERBOSE("Window Title: %s", g_android_context_attribs.window_title);
 		CLOVER_VERBOSE("Window Position: offset (%d; %d), rect (%d; %d)",
-				g_context_attribs.window_offset_left,
-				g_context_attribs.window_offset_top,
-				g_context_attribs.window_width,
-				g_context_attribs.window_height);
+				g_android_context_attribs.window_offset_left,
+				g_android_context_attribs.window_offset_top,
+				g_android_context_attribs.window_width,
+				g_android_context_attribs.window_height);
+
+		// init global variables
+		g_context_attribs = static_cast<context_attribs*>(&g_android_context_attribs);
 	}
 
 	void run()
@@ -62,4 +68,23 @@ namespace android {
 
 }
 }
+}
+
+void android_update_surface(ANativeWindow* i_wnd)
+{
+	using namespace calyx;
+	g_android_context_attribs.native_window = i_wnd;
+	CLOVER_INFO("surface updated");
+}
+
+void android_push_touch_event()
+{
+	using namespace calyx::platform::android;
+	s_event_buffer.push(2);
+}
+
+void android_push_key_event()
+{
+	using namespace calyx::platform::android;
+	s_event_buffer.push(3);
 }
