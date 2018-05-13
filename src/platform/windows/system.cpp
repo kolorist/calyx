@@ -63,7 +63,7 @@ namespace windows {
 					u32 x = (u32)(i_lparam & 0xFFFF);
 					u32 y = (u32)((i_lparam & 0xFFFF0000) >> 16);
 					// NOTE: log spamming!!!
-					CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
+					// CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
 					s_event_buffer.push(6);
 					break;
 				}
