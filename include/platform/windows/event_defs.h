@@ -1,0 +1,7 @@
+#pragma once
+
+/* mouse events */
+#define CLX_MOUSE_LEFT_BUTTON					0x00000001
+#define CLX_MOUSE_RIGHT_BUTTON					0x00000002
+#define CLX_MOUSE_MIDDLE_BUTTON					0x00000004
+#define CLX_MOUSE_BUTTON_PRESSED				0x00000008

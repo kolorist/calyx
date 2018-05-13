@@ -22,7 +22,21 @@ namespace calyx {
 	// allocators
 	typedef helich::allocator<helich::stack_scheme, helich::no_tracking_policy>	stack_allocator_t;
 	
-	typedef floral::ring_buffer_mt<u32, stack_allocator_t, 256>				event_buffer_t;
+	enum class interact_event_e {
+		cursor_interact,
+		cursor_move,
+		scroll,
+		character_input,
+		window_resize,
+		window_focus
+	};
+
+	struct interact_event_t {
+		interact_event_e						event_type;
+		u32										payload;
+	};
+
+	typedef floral::ring_buffer_mt<interact_event_t, stack_allocator_t, 256>	event_buffer_t;
 
 	// ***
 	// user-provided

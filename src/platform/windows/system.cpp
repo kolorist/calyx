@@ -8,6 +8,7 @@
 #include <VSOutputSink.h>
 
 #include "life_cycle.h"
+#include "platform/windows/event_defs.h"
 
 #include <Windows.h>
 
@@ -31,40 +32,52 @@ namespace windows {
 		// they are both 64-bit accordingly
 		switch (i_msg) {
 			case WM_LBUTTONDOWN:
+			case WM_LBUTTONDBLCLK:				// if we use CS_DBLCLKS window style, when double clicking, we receive: WM_LBUTTONDOWN -> WM_LBUTTONUP -> WM_LBUTTONDBLCLK -> WM_LBUTTONUP
 				{
-					CLOVER_VERBOSE("Mouse left: DOWN");
-					s_event_buffer.push(1);
+					CLOVER_VERBOSE("left down\n");
+					interact_event_t newEvent;
+					newEvent.event_type = interact_event_e::cursor_interact;
+					newEvent.payload = CLX_MOUSE_LEFT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
+					s_event_buffer.push(newEvent);
 					break;
 				}
 
 			case WM_LBUTTONUP:
 				{
-					CLOVER_VERBOSE("Mouse left: UP");
-					s_event_buffer.push(2);
+					CLOVER_VERBOSE("left up\n");
+					interact_event_t newEvent;
+					newEvent.event_type = interact_event_e::cursor_interact;
+					newEvent.payload = CLX_MOUSE_LEFT_BUTTON;
+					s_event_buffer.push(newEvent);
 					break;
 				}
 
 			case WM_RBUTTONDOWN:
 				{
-					CLOVER_VERBOSE("Mouse right: DOWN");
-					s_event_buffer.push(3);
+					interact_event_t newEvent;
+					newEvent.event_type = interact_event_e::cursor_interact;
+					newEvent.payload = CLX_MOUSE_RIGHT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
+					s_event_buffer.push(newEvent);
 					break;
 				}
 
 			case WM_RBUTTONUP:
 				{
-					CLOVER_VERBOSE("Mouse right: UP");
-					s_event_buffer.push(4);
+					interact_event_t newEvent;
+					newEvent.event_type = interact_event_e::cursor_interact;
+					newEvent.payload = CLX_MOUSE_RIGHT_BUTTON;
+					s_event_buffer.push(newEvent);
 					break;
 				}
 
 			case WM_MOUSEMOVE:
 				{
 					u32 x = (u32)(i_lparam & 0xFFFF);
-					u32 y = (u32)((i_lparam & 0xFFFF0000) >> 16);
-					// NOTE: log spamming!!!
-					// CLOVER_VERBOSE("Mouse move: (%d; %d)", x, y);
-					s_event_buffer.push(6);
+					u32 y = (u32)(i_lparam & 0xFFFF0000);
+					interact_event_t newEvent;
+					newEvent.event_type = interact_event_e::cursor_move;
+					newEvent.payload = x | y;
+					s_event_buffer.push(newEvent);
 					break;
 				}
 
@@ -74,7 +87,6 @@ namespace windows {
 					//s32 delta = (s32)((i_wparam & 0xFFFF0000) >> 16);
 					s32 delta = (s32)(i_wparam & 0xFFFF0000) / 65536;
 					f32 deltaF = (f32)delta / 120.0f;
-					CLOVER_VERBOSE("Mouse wheel delta: %4.2f", deltaF);
 					break;
 				}
 
@@ -82,7 +94,6 @@ namespace windows {
 				{
 					u32 keyCode = (u32)i_wparam;
 					CLOVER_VERBOSE("Character received: 0x%x - ASCII: '%c'", keyCode, (c8)keyCode);
-					s_event_buffer.push(5);
 					break;
 				}
 
@@ -146,7 +157,7 @@ namespace windows {
 		HINSTANCE hInst = GetModuleHandle(0);
 		WNDCLASSEX winClass;
 		winClass.cbSize = sizeof(WNDCLASSEX);
-		winClass.style = CS_DBLCLKS;
+		winClass.style = 0;						// we can use CS_DBLCLKS to enable double click message
 		winClass.lpfnWndProc = &window_proc;
 		winClass.cbClsExtra = 0;
 		winClass.cbWndExtra = 0;
