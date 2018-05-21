@@ -34,7 +34,6 @@ namespace windows {
 			case WM_LBUTTONDOWN:
 			case WM_LBUTTONDBLCLK:				// if we use CS_DBLCLKS window style, when double clicking, we receive: WM_LBUTTONDOWN -> WM_LBUTTONUP -> WM_LBUTTONDBLCLK -> WM_LBUTTONUP
 				{
-					CLOVER_VERBOSE("left down\n");
 					interact_event_t newEvent;
 					newEvent.event_type = interact_event_e::cursor_interact;
 					newEvent.payload = CLX_MOUSE_LEFT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
@@ -44,7 +43,6 @@ namespace windows {
 
 			case WM_LBUTTONUP:
 				{
-					CLOVER_VERBOSE("left up\n");
 					interact_event_t newEvent;
 					newEvent.event_type = interact_event_e::cursor_interact;
 					newEvent.payload = CLX_MOUSE_LEFT_BUTTON;
@@ -93,7 +91,7 @@ namespace windows {
 			case WM_CHAR:
 				{
 					u32 keyCode = (u32)i_wparam;
-					CLOVER_VERBOSE("Character received: 0x%x - ASCII: '%c'", keyCode, (c8)keyCode);
+					//CLOVER_VERBOSE("Character received: 0x%x - ASCII: '%c'", keyCode, (c8)keyCode);
 					break;
 				}
 
