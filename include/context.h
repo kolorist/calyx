@@ -27,6 +27,7 @@ namespace calyx {
 		cursor_move,
 		scroll,
 		character_input,
+		key_input,
 		window_resize,
 		window_focus
 	};
