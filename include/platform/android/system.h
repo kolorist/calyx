@@ -33,4 +33,5 @@ namespace android {
 
 void											android_update_surface(ANativeWindow* i_wnd);
 void											android_push_touch_event();
+void											android_push_touch_move_event(const u32 i_x, const u32 i_y);
 void											android_push_key_event();
