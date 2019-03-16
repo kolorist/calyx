@@ -82,6 +82,7 @@ void android_push_touch_event()
 void android_push_touch_move_event(const u32 i_x, const u32 i_y)
 {
 	LOG_TOPIC("platform_event");
+	CLOVER_VERBOSE("touch: %d - %d", i_x, i_y);
 	using namespace calyx::platform::android;
 	calyx::interact_event_t newEvent;
 	newEvent.event_type = calyx::interact_event_e::cursor_move;
