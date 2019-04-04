@@ -32,9 +32,11 @@ void initialize()
 	clover::InitializeADBOutput("adb", clover::LogLevel::Verbose);
 
 	// init sub-systems
+#if 0
 	g_subsystems.task_manager = g_allocators.subsystems_allocator.allocate<refrain2::TaskManager>();
 	g_subsystems.task_manager->Initialize(2);
 	g_subsystems.task_manager->StartAllTaskingThreads();
+#endif
 
 	// log window configs
 	CLOVER_VERBOSE("Window Title: %s", g_android_context_attribs.window_title);
@@ -67,14 +69,76 @@ void clean_up()
 }
 }
 
+//----------------------------------------------
+// These functions runs at the same thread with JNI thread
 void android_update_surface(ANativeWindow* i_wnd)
 {
-	LOG_TOPIC("platform_event");
 	using namespace calyx;
+	using namespace calyx::platform::android;
+
+	LOG_TOPIC("lifecycle");
+	if (i_wnd) {
+		CLOVER_VERBOSE("Update Surface at address: 0x%x", (aptr)i_wnd);
+	} else {
+		CLOVER_VERBOSE("Update Surface: nullptr");
+	}
+
 	g_android_context_attribs.native_window = i_wnd;
-	CLOVER_INFO("surface updated");
+	interact_event_t newEvent;
+	newEvent.event_type = interact_event_e::window_lifecycle;
+	newEvent.payload = (u32)life_cycle_event_type_e::display_update;
+	s_event_buffer.push(newEvent);
 }
 
+void android_push_pause_event()
+{
+	using namespace calyx;
+	using namespace calyx::platform::android;
+
+	LOG_TOPIC("lifecycle");
+	CLOVER_VERBOSE("Pause Event received.");
+
+	interact_event_t newEvent;
+	newEvent.event_type = interact_event_e::window_lifecycle;
+	newEvent.payload = (u32)life_cycle_event_type_e::pause;
+	s_event_buffer.push(newEvent);
+}
+
+void android_push_resume_event()
+{
+	using namespace calyx;
+	using namespace calyx::platform::android;
+
+	LOG_TOPIC("lifecycle");
+	CLOVER_VERBOSE("Resume Event received.");
+
+	interact_event_t newEvent;
+	newEvent.event_type = interact_event_e::window_lifecycle;
+	newEvent.payload = (u32)life_cycle_event_type_e::resume;
+	s_event_buffer.push(newEvent);
+}
+
+void android_push_focus_event(bool i_hasFocus)
+{
+	using namespace calyx;
+	using namespace calyx::platform::android;
+
+	LOG_TOPIC("lifecycle");
+
+	interact_event_t newEvent;
+	newEvent.event_type = interact_event_e::window_lifecycle;
+	if (i_hasFocus) {
+		newEvent.payload = (u32)life_cycle_event_type_e::focus_gain;
+		CLOVER_VERBOSE("Application gained focus.");
+	} else {
+		newEvent.payload = (u32)life_cycle_event_type_e::focus_lost;
+		CLOVER_VERBOSE("Application lost focus.");
+	}
+	s_event_buffer.push(newEvent);
+}
+
+//----------------------------------------------
+// These functions runs at the same thread with JNI thread
 void android_push_touch_event()
 {
 }
