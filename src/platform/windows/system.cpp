@@ -1,31 +1,177 @@
-#include "platform/windows/system.h"
+#include "calyx/platform/windows/system.h"
 
 #include <helich.h>
 #include <refrain2.h>
 
-#include <Logger.h>
-#include <SinkTopic.h>
-#include <VSOutputSink.h>
+#include <clover/Logger.h>
+#include <clover/SinkTopic.h>
+#include <clover/VSOutputSink.h>
 
-#include "life_cycle.h"
-#include "platform/windows/event_defs.h"
+#include <calyx/context.h>
+#include <calyx/life_cycle.h>
+#include <calyx/memory.h>
+#include <calyx/platform/windows/event_defs.h>
 
 #include <Windows.h>
 
 namespace calyx {
-
-windows_context_attribs						g_windows_context_attribs;
-
 namespace platform {
 namespace windows {
 
-static HWND									s_hwnd;
-static bool									s_running;
+static windows_context_attribs					s_ctx_attribs;
+windows_context_attribs* get_windows_context_attribs()
+{
+	return &s_ctx_attribs;
+}
 
-static floral::thread						s_main_thread;
-static event_buffer_t						s_event_buffer;
+//----------------------------------------------
 
-LRESULT CALLBACK window_proc(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
+static bool										s_running;
+static floral::thread							s_main_thread;
+static event_buffer_t							s_event_buffer;
+
+LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
+{
+	LOG_TOPIC("platform_event");
+	switch (i_msg) {
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONDBLCLK:				// if we use CS_DBLCLKS window style, when double clicking, we receive: WM_LBUTTONDOWN -> WM_LBUTTONUP -> WM_LBUTTONDBLCLK -> WM_LBUTTONUP
+		{
+			break;
+		}
+
+		case WM_LBUTTONUP:
+			{
+				break;
+			}
+
+		case WM_RBUTTONDOWN:
+			{
+				break;
+			}
+
+		case WM_RBUTTONUP:
+			{
+				break;
+			}
+
+		case WM_MOUSEMOVE:
+			{
+				break;
+			}
+
+		case WM_MOUSEWHEEL:
+			{
+				break;
+			}
+
+		case WM_CHAR:
+			{
+				break;
+			}
+
+		case WM_KEYDOWN:
+			{
+				break;
+			}
+
+		case WM_KEYUP:
+			{
+				break;
+			}
+
+		case WM_DESTROY:
+			{
+				PostQuitMessage(0);
+				s_running = false;
+				break;
+			}
+
+		case WM_CREATE:
+			{
+				break;
+			}
+
+		case WM_SETFOCUS:
+		{
+			CLOVER_DEBUG("Window gained focus");
+			break;
+		}
+
+		case WM_KILLFOCUS:
+		{
+			CLOVER_DEBUG("Window lost focus");
+			break;
+		}
+
+		case WM_SIZE:
+		{
+			InvalidateRgn(s_ctx_attribs.hwnd, 0, 0);
+			switch (i_wparam)
+			{
+				case SIZE_MINIMIZED:
+				{
+					CLOVER_DEBUG("Window had been minimized");
+					{
+						event_t eve;
+						eve.type = event_type_e::lifecycle;
+						eve.lifecycle_event_data.inner_type = lifecycle_event_type_e::pause;
+						s_event_buffer.push(eve);
+						flush_mainthread();
+					}
+
+					{
+						event_t eve;
+						eve.type = event_type_e::lifecycle;
+						eve.lifecycle_event_data.inner_type = lifecycle_event_type_e::surface_destroyed;
+						s_event_buffer.push(eve);
+						flush_mainthread();
+					}
+					break;
+				}
+				case SIZE_RESTORED:
+				{
+					CLOVER_DEBUG("Window had been restored");
+					{
+						event_t eve;
+						eve.type = event_type_e::lifecycle;
+						eve.lifecycle_event_data.inner_type = lifecycle_event_type_e::resume;
+						s_event_buffer.push(eve);
+						try_wake_mainthread();
+					}
+
+					{
+						event_t eve;
+						eve.type = event_type_e::lifecycle;
+						eve.lifecycle_event_data.inner_type = lifecycle_event_type_e::surface_ready;
+						s_event_buffer.push(eve);
+						try_wake_mainthread();
+					}
+					break;
+				}
+			}
+			break;
+		}
+			
+		case WM_PAINT:
+			{
+				PAINTSTRUCT paintStruct;
+				HDC hDC = BeginPaint(s_ctx_attribs.hwnd, &paintStruct);
+				EndPaint(s_ctx_attribs.hwnd, &paintStruct);
+				break;
+			}
+
+		default:
+			{
+				return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
+			}
+
+	}
+	return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
+}
+
+#if 0
+LRESULT CALLBACK window_proc_render_in_main_thread(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
 {
 	LOG_TOPIC("platform_event");
 	// NOTE: please note that sizeof(WPARAM) and sizeof(LPARAM) in 32-bit system is 32-bit while in 64-bit system
@@ -134,15 +280,15 @@ LRESULT CALLBACK window_proc(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_
 
 		case WM_SIZE:
 			{
-				InvalidateRgn(s_hwnd, 0, 0);
+				InvalidateRgn(s_ctx_attribs.hwnd, 0, 0);
 				break;
 			}
 			
 		case WM_PAINT:
 			{
 				PAINTSTRUCT paintStruct;
-				HDC hDC = BeginPaint(s_hwnd, &paintStruct);
-				EndPaint(s_hwnd, &paintStruct);
+				HDC hDC = BeginPaint(s_ctx_attribs.hwnd, &paintStruct);
+				EndPaint(s_ctx_attribs.hwnd, &paintStruct);
 				break;
 			}
 
@@ -152,36 +298,49 @@ LRESULT CALLBACK window_proc(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_
 			}
 
 	}
+	FLORAL_ASSERT_MSG_ONLY("Should never come here");
 	return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
 }
+#endif
 
 
 void initialize()
 {
+	context_attribs* commonCtx = get_context_attribs();
+	FLORAL_ASSERT_MSG(commonCtx->window_title != nullptr, "No title for window");
+	FLORAL_ASSERT_MSG(commonCtx->window_width > 0, "Window's width must be greater than 0");
+	FLORAL_ASSERT_MSG(commonCtx->window_height > 0, "Window's height must be greater than 0");
+
+	subsystems* subSystems = get_subsystems();
+	allocators_t* allocators = get_allocators();
+
 	// init essential systems
 	// helich
 	helich::init_memory_system();
 	clover::InitializeVSOutput("vs", clover::LogLevel::Verbose);
 
 	// init sub-systems: generic worker threads
-	g_subsystems.task_manager = g_allocators.subsystems_allocator.allocate<refrain2::TaskManager>();
-	g_subsystems.task_manager->Initialize(2);
-	g_subsystems.task_manager->StartAllTaskingThreads();
+	subSystems->task_manager = allocators->subsystems_allocator.allocate<refrain2::TaskManager>();
+	subSystems->task_manager->Initialize(2);
+	subSystems->task_manager->StartAllTaskingThreads();
 
 	// log window configs
-	CLOVER_VERBOSE("Window Title: %s", g_windows_context_attribs.window_title);
+	CLOVER_VERBOSE("Window Title: %s", commonCtx->window_title);
 	CLOVER_VERBOSE("Window Position: offset (%d; %d), rect (%d; %d)",
-			g_windows_context_attribs.window_offset_left,
-			g_windows_context_attribs.window_offset_top,
-			g_windows_context_attribs.window_width,
-			g_windows_context_attribs.window_height);
+			commonCtx->window_offset_left,
+			commonCtx->window_offset_top,
+			commonCtx->window_width,
+			commonCtx->window_height);
 
 	// now create the window
 	HINSTANCE hInst = GetModuleHandle(0);
 	WNDCLASSEX winClass;
 	winClass.cbSize = sizeof(WNDCLASSEX);
 	winClass.style = 0;						// we can use CS_DBLCLKS to enable double click message
-	winClass.lpfnWndProc = &window_proc;
+	//if (commonCtx->render_in_main_thread)
+		//winClass.lpfnWndProc = &window_proc_render_in_main_thread;
+	//else
+		winClass.lpfnWndProc = &window_proc_render_in_worker_thread;
 	winClass.cbClsExtra = 0;
 	winClass.cbWndExtra = 0;
 	winClass.hInstance = hInst;
@@ -189,38 +348,31 @@ void initialize()
 	winClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	winClass.hbrBackground = nullptr;
 	winClass.lpszMenuName = nullptr;
-	winClass.lpszClassName = TEXT("Amborella");
+	winClass.lpszClassName = TEXT("calyx");
 	winClass.hIconSm = nullptr;
 
 	RegisterClassEx(&winClass);
 
 	RECT r;
-	r.left = g_windows_context_attribs.window_offset_left;
-	r.top = g_windows_context_attribs.window_offset_top;
-	r.right = g_windows_context_attribs.window_width + g_windows_context_attribs.window_offset_left;
-	r.bottom = g_windows_context_attribs.window_height + g_windows_context_attribs.window_offset_top;
+	r.left = commonCtx->window_offset_left;
+	r.top = commonCtx->window_offset_top;
+	r.right = commonCtx->window_width + commonCtx->window_offset_left;
+	r.bottom = commonCtx->window_height + commonCtx->window_offset_top;
 	AdjustWindowRectEx(&r, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
 
-	s_hwnd = CreateWindowEx(
+	s_ctx_attribs.hwnd = CreateWindowEx(
 			WS_EX_OVERLAPPEDWINDOW,
-			TEXT("Amborella"),
-			TEXT(g_windows_context_attribs.window_title),
+			TEXT("calyx"),
+			TEXT(commonCtx->window_title),
 			WS_OVERLAPPEDWINDOW,
 			r.left, r.top, r.right - r.left, r.bottom - r.top,
 			nullptr, nullptr, hInst, nullptr);
-
-	// init global variables
-	g_windows_context_attribs.hwnd = s_hwnd;
-	g_context_attribs = static_cast<context_attribs*>(&g_windows_context_attribs);
 }
 
 void run()
 {
-	ShowWindow(s_hwnd, SW_SHOWNORMAL);
-	UpdateWindow(s_hwnd);
-
-	// setup event buffer
-	s_event_buffer.assign_allocator(&g_allocators.subsystems_allocator);
+	ShowWindow(s_ctx_attribs.hwnd, SW_SHOWNORMAL);
+	UpdateWindow(s_ctx_attribs.hwnd);
 
 	// kick off s_main_thread
 	s_main_thread.entry_point = &calyx::main_thread_func;
@@ -245,7 +397,7 @@ void run()
 		//SwapBuffers(oglRenderer.OglDC);
 	}
 
-	DestroyWindow(s_hwnd);;
+	DestroyWindow(s_ctx_attribs.hwnd);;
 }
 
 void clean_up()

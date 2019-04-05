@@ -9,6 +9,7 @@ include_directories ("${PROJECT_SOURCE_DIR}/include")
 
 set (file_list
 	"${PROJECT_SOURCE_DIR}/src/context.cpp"
+	"${PROJECT_SOURCE_DIR}/src/memory.cpp"
 	"${PROJECT_SOURCE_DIR}/src/life_cycle.cpp")
 
 add_definitions(
