@@ -1,6 +1,6 @@
 #pragma once
 
-#include <containers/double_queue.h>
+#include <floral/containers/double_queue.h>
 
 namespace calyx
 {
