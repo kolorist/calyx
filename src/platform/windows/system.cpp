@@ -37,48 +37,92 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONDBLCLK:				// if we use CS_DBLCLKS window style, when double clicking, we receive: WM_LBUTTONDOWN -> WM_LBUTTONUP -> WM_LBUTTONDBLCLK -> WM_LBUTTONUP
 		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::cursor_interact;
+			eve.interact_event_data.payload = CLX_MOUSE_LEFT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
+			s_event_buffer.push(eve);
 			break;
 		}
 
 		case WM_LBUTTONUP:
-			{
-				break;
-			}
+		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::cursor_interact;
+			eve.interact_event_data.payload = CLX_MOUSE_LEFT_BUTTON;
+			s_event_buffer.push(eve);
+			break;
+		}
 
 		case WM_RBUTTONDOWN:
-			{
-				break;
-			}
+		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::cursor_interact;
+			eve.interact_event_data.payload = CLX_MOUSE_RIGHT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
+			s_event_buffer.push(eve);
+			break;
+		}
 
 		case WM_RBUTTONUP:
-			{
-				break;
-			}
+		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::cursor_interact;
+			eve.interact_event_data.payload = CLX_MOUSE_RIGHT_BUTTON;
+			s_event_buffer.push(eve);
+			break;
+		}
 
 		case WM_MOUSEMOVE:
-			{
-				break;
-			}
+		{
+			u32 x = (u32)(i_lparam & 0xFFFF);
+			u32 y = (u32)(i_lparam & 0xFFFF0000);
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::cursor_move;
+			eve.interact_event_data.payload = x | y;
+			s_event_buffer.push(eve);
+			break;
+		}
 
 		case WM_MOUSEWHEEL:
-			{
-				break;
-			}
+		{
+			break;
+		}
 
 		case WM_CHAR:
-			{
-				break;
-			}
+		{
+			break;
+		}
 
 		case WM_KEYDOWN:
-			{
-				break;
-			}
+		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::key_input;
+			u32 keyCode = u32(i_wparam & 0x000000FF);
+			u32 keyStatus = CLX_KEY;
+			if (i_lparam & 0x40000000)
+				keyStatus |= CLX_KEY_HELD;
+			else keyStatus |= CLX_KEY_PRESSED;
+			eve.interact_event_data.payload = keyStatus | (keyCode << 4);
+			s_event_buffer.push(eve);
+			break;
+		}
 
 		case WM_KEYUP:
-			{
-				break;
-			}
+		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::key_input;
+			u32 keyCode = u32(i_wparam & 0x000000FF);
+			u32 keyStatus = CLX_KEY;
+			eve.interact_event_data.payload = keyStatus | (keyCode << 4);
+			s_event_buffer.push(eve);
+			break;
+		}
 
 		case WM_DESTROY:
 			{
