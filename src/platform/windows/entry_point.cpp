@@ -1,8 +1,8 @@
 #include <floral.h>
 
-#include "calyx/context.h"
-#include "calyx/life_cycle.h"
-#include "calyx/platform/windows/system.h"
+#include <calyx/context.h>
+#include <calyx/life_cycle.h>
+#include <calyx/platform/windows/system.h>
 
 s32 main(c8 argc, const_cstr* argv)
 {

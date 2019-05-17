@@ -1,28 +1,28 @@
 #pragma once
 
-#include <stdaliases.h>
-#include <thread/thread.h>
+#include <floral/stdaliases.h>
+#include <floral/thread/thread.h>
 
-#include "context.h"
+#include <calyx/context.h>
 
 // android
 #include <EGL/egl.h>
 #include <android/native_window.h>
 
 namespace calyx {
+namespace platform {
+namespace android {
 
-struct android_context_attribs : context_attribs {
+struct android_context_attribs {
 	EGLDisplay									display;
 	EGLSurface									surface;
 	EGLConfig									config;
 	EGLContext									main_context;
 	ANativeWindow*								native_window;
 };
+android_context_attribs*						get_android_context_attribs();
 
-extern android_context_attribs				g_android_context_attribs;
-	
-namespace platform {
-namespace android {
+//----------------------------------------------
 
 void											initialize();
 void											run();
@@ -36,6 +36,8 @@ void											android_push_pause_event();
 void											android_push_resume_event();
 void											android_push_focus_event(bool i_hasFocus);
 void											android_update_surface(ANativeWindow* i_wnd);
+void											android_will_destroy_surface(ANativeWindow* i_wnd);
+void											android_created_surface(ANativeWindow* i_wnd);
 
 void											android_push_touch_event();
 void											android_push_touch_move_event(const u32 i_x, const u32 i_y);

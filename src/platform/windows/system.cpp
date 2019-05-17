@@ -32,7 +32,6 @@ static event_buffer_t							s_event_buffer;
 
 LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
 {
-	LOG_TOPIC("platform_event");
 	switch (i_msg) {
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONDBLCLK:				// if we use CS_DBLCLKS window style, when double clicking, we receive: WM_LBUTTONDOWN -> WM_LBUTTONUP -> WM_LBUTTONDBLCLK -> WM_LBUTTONUP
@@ -138,13 +137,15 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 
 		case WM_SETFOCUS:
 		{
-			CLOVER_DEBUG("Window gained focus");
+			LOG_TOPIC("platform_event");
+			CLOVER_VERBOSE("Window gained focus");
 			break;
 		}
 
 		case WM_KILLFOCUS:
 		{
-			CLOVER_DEBUG("Window lost focus");
+			LOG_TOPIC("platform_event");
+			CLOVER_VERBOSE("Window lost focus");
 			break;
 		}
 
@@ -155,7 +156,8 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 			{
 				case SIZE_MINIMIZED:
 				{
-					CLOVER_DEBUG("Window had been minimized");
+					LOG_TOPIC("platform_event");
+					CLOVER_VERBOSE("Window had been minimized");
 					{
 						event_t eve;
 						eve.type = event_type_e::lifecycle;
@@ -164,6 +166,7 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 						flush_mainthread();
 					}
 
+					CLOVER_VERBOSE("GL Surface will be destroyed");
 					{
 						event_t eve;
 						eve.type = event_type_e::lifecycle;
@@ -175,7 +178,8 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 				}
 				case SIZE_RESTORED:
 				{
-					CLOVER_DEBUG("Window had been restored");
+					LOG_TOPIC("platform_event");
+					CLOVER_VERBOSE("Window had been restored");
 					{
 						event_t eve;
 						eve.type = event_type_e::lifecycle;
@@ -184,6 +188,7 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 						try_wake_mainthread();
 					}
 
+					CLOVER_VERBOSE("GL Surface is now ready");
 					{
 						event_t eve;
 						eve.type = event_type_e::lifecycle;
@@ -214,140 +219,6 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 	return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
 }
 
-#if 0
-LRESULT CALLBACK window_proc_render_in_main_thread(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
-{
-	LOG_TOPIC("platform_event");
-	// NOTE: please note that sizeof(WPARAM) and sizeof(LPARAM) in 32-bit system is 32-bit while in 64-bit system
-	// they are both 64-bit accordingly
-	switch (i_msg) {
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONDBLCLK:				// if we use CS_DBLCLKS window style, when double clicking, we receive: WM_LBUTTONDOWN -> WM_LBUTTONUP -> WM_LBUTTONDBLCLK -> WM_LBUTTONUP
-			{
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::cursor_interact;
-				newEvent.payload = CLX_MOUSE_LEFT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_LBUTTONUP:
-			{
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::cursor_interact;
-				newEvent.payload = CLX_MOUSE_LEFT_BUTTON;
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_RBUTTONDOWN:
-			{
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::cursor_interact;
-				newEvent.payload = CLX_MOUSE_RIGHT_BUTTON | CLX_MOUSE_BUTTON_PRESSED;
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_RBUTTONUP:
-			{
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::cursor_interact;
-				newEvent.payload = CLX_MOUSE_RIGHT_BUTTON;
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_MOUSEMOVE:
-			{
-				u32 x = (u32)(i_lparam & 0xFFFF);
-				u32 y = (u32)(i_lparam & 0xFFFF0000);
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::cursor_move;
-				newEvent.payload = x | y;
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_MOUSEWHEEL:
-			{
-				// NOTE: signed-int bit shifting is implementation-dependant
-				//s32 delta = (s32)((i_wparam & 0xFFFF0000) >> 16);
-				s32 delta = (s32)(i_wparam & 0xFFFF0000) / 65536;
-				f32 deltaF = (f32)delta / 120.0f;
-				break;
-			}
-
-		case WM_CHAR:
-			{
-				u32 keyCode = (u32)i_wparam;
-				//CLOVER_VERBOSE("Character received: 0x%x - ASCII: '%c'", keyCode, (c8)keyCode);
-				break;
-			}
-
-		case WM_KEYDOWN:
-			{
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::key_input;
-				u32 keyCode = u32(i_wparam & 0x000000FF);
-				u32 keyStatus = CLX_KEY;
-				if (i_lparam & 0x40000000)
-					keyStatus |= CLX_KEY_HELD;
-				else keyStatus |= CLX_KEY_PRESSED;
-				newEvent.payload = keyStatus | (keyCode << 4);
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_KEYUP:
-			{
-				interact_event_t newEvent;
-				newEvent.event_type = interact_event_e::key_input;
-				u32 keyCode = u32(i_wparam & 0x000000FF);
-				u32 keyStatus = CLX_KEY;
-				newEvent.payload = keyStatus | (keyCode << 4);
-				s_event_buffer.push(newEvent);
-				break;
-			}
-
-		case WM_DESTROY:
-			{
-				PostQuitMessage(0);
-				s_running = false;
-				break;
-			}
-
-		case WM_CREATE:
-			{
-				break;
-			}
-
-		case WM_SIZE:
-			{
-				InvalidateRgn(s_ctx_attribs.hwnd, 0, 0);
-				break;
-			}
-			
-		case WM_PAINT:
-			{
-				PAINTSTRUCT paintStruct;
-				HDC hDC = BeginPaint(s_ctx_attribs.hwnd, &paintStruct);
-				EndPaint(s_ctx_attribs.hwnd, &paintStruct);
-				break;
-			}
-
-		default:
-			{
-				return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
-			}
-
-	}
-	FLORAL_ASSERT_MSG_ONLY("Should never come here");
-	return DefWindowProc(i_hwnd, i_msg, i_wparam, i_lparam);
-}
-#endif
-
-
 void initialize()
 {
 	context_attribs* commonCtx = get_context_attribs();
@@ -361,12 +232,16 @@ void initialize()
 	// init essential systems
 	// helich
 	helich::init_memory_system();
-	clover::InitializeVSOutput("vs", clover::LogLevel::Verbose);
+	CLOVER_INIT_THIS_THREAD("platform_thread", clover::LogLevel::Verbose);
+
+	LOG_TOPIC("calyx");
+	CLOVER_VERBOSE("Initializing essential systems...");
 
 	// init sub-systems: generic worker threads
 	subSystems->task_manager = allocators->subsystems_allocator.allocate<refrain2::TaskManager>();
 	subSystems->task_manager->Initialize(2);
 	subSystems->task_manager->StartAllTaskingThreads();
+	CLOVER_VERBOSE("refrain started");
 
 	// log window configs
 	CLOVER_VERBOSE("Window Title: %s", commonCtx->window_title);
@@ -381,10 +256,7 @@ void initialize()
 	WNDCLASSEX winClass;
 	winClass.cbSize = sizeof(WNDCLASSEX);
 	winClass.style = 0;						// we can use CS_DBLCLKS to enable double click message
-	//if (commonCtx->render_in_main_thread)
-		//winClass.lpfnWndProc = &window_proc_render_in_main_thread;
-	//else
-		winClass.lpfnWndProc = &window_proc_render_in_worker_thread;
+	winClass.lpfnWndProc = &window_proc_render_in_worker_thread;
 	winClass.cbClsExtra = 0;
 	winClass.cbWndExtra = 0;
 	winClass.hInstance = hInst;
@@ -411,10 +283,14 @@ void initialize()
 			WS_OVERLAPPEDWINDOW,
 			r.left, r.top, r.right - r.left, r.bottom - r.top,
 			nullptr, nullptr, hInst, nullptr);
+	CLOVER_VERBOSE("Window created");
 }
 
 void run()
 {
+	LOG_TOPIC("calyx");
+	CLOVER_VERBOSE("Starting window...");
+
 	ShowWindow(s_ctx_attribs.hwnd, SW_SHOWNORMAL);
 	UpdateWindow(s_ctx_attribs.hwnd);
 
@@ -423,8 +299,11 @@ void run()
 	s_main_thread.ptr_data = &s_event_buffer;
 	s_main_thread.start();
 
+	CLOVER_VERBOSE("Kicked off main_thread");
+
 	MSG msg;
 	s_running = true;
+	CLOVER_VERBOSE("Entering event loop...");
 	while (s_running) {
 		// platform events
 		//if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {

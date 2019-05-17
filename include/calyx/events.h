@@ -36,11 +36,11 @@ struct event_t
 {
 	event_type_e								type;
 	union {
-		struct interact_event_t {
+		struct {
 			u64									payload;
 			interact_event_e					inner_type;
 		} interact_event_data;
-		struct lifecycle_event_t {
+		struct {
 			lifecycle_event_type_e				inner_type;
 		} lifecycle_event_data;
 	};
