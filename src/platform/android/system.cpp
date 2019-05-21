@@ -14,6 +14,8 @@
 #include <calyx/memory.h>
 #include <calyx/platform/android/event_defs.h>
 
+#include <unistd.h>
+
 namespace calyx {
 namespace platform {
 namespace android {
@@ -35,6 +37,11 @@ void initialize()
 	context_attribs* commonCtx = get_context_attribs();
 	subsystems* subSystems = get_subsystems();
 	allocators_t* allocators = get_allocators();
+	system_info_t* systemInfo = get_system_info();
+
+	// init information structs
+	systemInfo->page_size = (size)sysconf(_SC_PAGESIZE);
+	systemInfo->num_logical_processors = (u32)sysconf(_SC_NPROCESSORS_ONLN);
 
 	// init essential systems
 	// helich
@@ -49,6 +56,12 @@ void initialize()
 	subSystems->task_manager->Initialize(2);
 	subSystems->task_manager->StartAllTaskingThreads();
 	CLOVER_VERBOSE("refrain started");
+
+	// log system info
+	CLOVER_INFO("system_info.page_size: %lld bytes", systemInfo->page_size);
+	CLOVER_INFO("system_info.num_logical_processors: %d", systemInfo->num_logical_processors);
+	CLOVER_INFO("system_info.primary_screen_width: <waiting for native surface>");
+	CLOVER_INFO("system_info.primary_screen_height: <waiting for native surface>");
 
 	// log window configs
 	CLOVER_VERBOSE("Window Title: %s", commonCtx->window_title);

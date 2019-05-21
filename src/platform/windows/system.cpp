@@ -228,6 +228,15 @@ void initialize()
 
 	subsystems* subSystems = get_subsystems();
 	allocators_t* allocators = get_allocators();
+	system_info_t* systemInfo = get_system_info();
+
+	// init information structs
+	SYSTEM_INFO nativeSystemInfo;
+	GetSystemInfo(&nativeSystemInfo);
+	systemInfo->page_size = (size)nativeSystemInfo.dwPageSize;
+	systemInfo->num_logical_processors = (u32)nativeSystemInfo.dwNumberOfProcessors;
+	systemInfo->primary_screen_width = (u32)GetSystemMetrics(SM_CXSCREEN);
+	systemInfo->primary_screen_height = (u32)GetSystemMetrics(SM_CYSCREEN);
 
 	// init essential systems
 	// helich
@@ -242,6 +251,12 @@ void initialize()
 	subSystems->task_manager->Initialize(2);
 	subSystems->task_manager->StartAllTaskingThreads();
 	CLOVER_VERBOSE("refrain started");
+
+	// log system info
+	CLOVER_INFO("system_info.page_size: %lld bytes", systemInfo->page_size);
+	CLOVER_INFO("system_info.num_logical_processors: %d", systemInfo->num_logical_processors);
+	CLOVER_INFO("system_info.primary_screen_width: %d", systemInfo->primary_screen_width);
+	CLOVER_INFO("system_info.primary_screen_height: %d", systemInfo->primary_screen_height);
 
 	// log window configs
 	CLOVER_VERBOSE("Window Title: %s", commonCtx->window_title);

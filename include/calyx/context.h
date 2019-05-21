@@ -20,6 +20,14 @@ struct context_attribs {
 	bool										render_in_main_thread;
 };
 
+struct system_info_t
+{
+	size										page_size;
+	u32											num_logical_processors;
+	u32											primary_screen_width;
+	u32											primary_screen_height;
+};
+
 // platform sub-systems
 struct subsystems {
 	refrain2::TaskManager*						task_manager;
@@ -29,5 +37,6 @@ struct subsystems {
 
 context_attribs*								get_context_attribs();
 subsystems*										get_subsystems();
+system_info_t*									get_system_info();
 
 }
