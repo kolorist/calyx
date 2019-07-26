@@ -5,7 +5,8 @@
 
 #include <floral/stdaliases.h>
 
-namespace calyx {
+namespace calyx
+{
 // called from input thread
 extern void										setup_surface(context_attribs* io_commonCtx);
 extern void										try_wake_mainthread();

@@ -17,6 +17,7 @@
 namespace calyx {
 namespace platform {
 namespace windows {
+//----------------------------------------------
 
 static windows_context_attribs					s_ctx_attribs;
 windows_context_attribs* get_windows_context_attribs()
@@ -29,6 +30,8 @@ windows_context_attribs* get_windows_context_attribs()
 static bool										s_running;
 static floral::thread							s_main_thread;
 static event_buffer_t							s_event_buffer;
+
+//----------------------------------------------
 
 LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WPARAM i_wparam, LPARAM i_lparam)
 {
@@ -125,6 +128,15 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 
 		case WM_DESTROY:
 			{
+				LOG_TOPIC("platform_event");
+				CLOVER_VERBOSE("Destroying window...");
+
+				event_t eve;
+				eve.type = event_type_e::lifecycle;
+				eve.lifecycle_event_data.inner_type = lifecycle_event_type_e::stop;
+				s_event_buffer.push(eve);
+				flush_mainthread();
+
 				PostQuitMessage(0);
 				s_running = false;
 				break;
@@ -334,6 +346,8 @@ void run()
 		// DwmFlush();
 		//SwapBuffers(oglRenderer.OglDC);
 	}
+
+	floral::wait_for_thread(s_main_thread);
 
 	DestroyWindow(s_ctx_attribs.hwnd);;
 }

@@ -23,7 +23,8 @@ enum class lifecycle_event_type_e : s32
 	surface_ready,
 	surface_destroyed,
 	focus_gain,
-	focus_lost
+	focus_lost,
+	stop
 };
 
 enum class event_type_e : s32
@@ -35,12 +36,15 @@ enum class event_type_e : s32
 struct event_t
 {
 	event_type_e								type;
-	union {
-		struct {
+	union
+	{
+		struct
+		{
 			u64									payload;
 			interact_event_e					inner_type;
 		} interact_event_data;
-		struct {
+		struct
+		{
 			lifecycle_event_type_e				inner_type;
 		} lifecycle_event_data;
 	};
