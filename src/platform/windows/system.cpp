@@ -96,6 +96,12 @@ LRESULT CALLBACK window_proc_render_in_worker_thread(HWND i_hwnd, UINT i_msg, WP
 
 		case WM_CHAR:
 		{
+			event_t eve;
+			eve.type = event_type_e::interact;
+			eve.interact_event_data.inner_type = interact_event_e::character_input;
+			u32 keyCode = u32(i_wparam & 0x000000FF);
+			eve.interact_event_data.payload = keyCode;
+			s_event_buffer.push(eve);
 			break;
 		}
 
