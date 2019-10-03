@@ -4,7 +4,7 @@
 #include <calyx/life_cycle.h>
 #include <calyx/platform/windows/system.h>
 
-s32 main(c8 argc, const_cstr* argv)
+s32 main(s32 argc, const_cstr* argv)
 {
 	using namespace calyx;
 
