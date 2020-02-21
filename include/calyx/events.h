@@ -12,6 +12,7 @@ enum class interact_event_e : s32
 	scroll,
 	character_input,
 	key_input,
+	orientation_input,
 	window_resize,
 	window_lifecycle
 };
@@ -41,6 +42,8 @@ struct event_t
 		struct
 		{
 			u64									payload;
+			u32									lowpayload;
+			f32									extpayload[3];
 			interact_event_e					inner_type;
 		} interact_event_data;
 		struct

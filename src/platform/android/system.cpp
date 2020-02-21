@@ -187,20 +187,82 @@ void android_push_focus_event(bool i_hasFocus)
 
 //----------------------------------------------
 // These functions runs at the same thread with JNI thread
-void android_push_touch_event()
+void android_push_touch_down_event(const u32 i_pointerId, const u32 i_x, const u32 i_y)
 {
+	using namespace calyx;
+	using namespace calyx::platform::android;
+	{
+		u32 x = i_x;
+		u32 y = i_y << 16;
+		event_t eve;
+		eve.type = event_type_e::interact;
+		eve.interact_event_data.inner_type = interact_event_e::cursor_move;
+		eve.interact_event_data.payload = x | y;
+		eve.interact_event_data.lowpayload = i_pointerId;
+		s_event_buffer.push(eve);
+	}
+	{
+		event_t eve;
+		eve.type = event_type_e::interact;
+		eve.interact_event_data.inner_type = interact_event_e::cursor_interact;
+		eve.interact_event_data.payload = CLX_TOUCH_DOWN;
+		eve.interact_event_data.lowpayload = i_pointerId;
+		s_event_buffer.push(eve);
+	}
 }
 
-void android_push_touch_move_event(const u32 i_x, const u32 i_y)
+void android_push_touch_up_event(const u32 i_pointerId, const u32 i_x, const u32 i_y)
 {
+	using namespace calyx;
 	using namespace calyx::platform::android;
-	LOG_TOPIC("platform_event");
-	CLOVER_VERBOSE("touch: %d - %d", i_x, i_y);
+	// should we emit a touch move event before touch up?
+	{
+		event_t eve;
+		eve.type = event_type_e::interact;
+		eve.interact_event_data.inner_type = interact_event_e::cursor_interact;
+		eve.interact_event_data.payload = CLX_TOUCH_UP;
+		eve.interact_event_data.lowpayload = i_pointerId;
+		s_event_buffer.push(eve);
+	}
 }
 
-void android_push_key_event()
+void android_push_touch_move_event(const u32 i_pointerId, const u32 i_x, const u32 i_y)
 {
+	using namespace calyx;
 	using namespace calyx::platform::android;
-	LOG_TOPIC("platform_event");
-	CLOVER_VERBOSE("key");
+	u32 x = i_x;
+	u32 y = i_y << 16;
+	event_t eve;
+	eve.type = event_type_e::interact;
+	eve.interact_event_data.inner_type = interact_event_e::cursor_move;
+	eve.interact_event_data.payload = x | y;
+	eve.interact_event_data.lowpayload = i_pointerId;
+	s_event_buffer.push(eve);
+}
+
+void android_push_key_event(const u32 i_keyCode)
+{
+	using namespace calyx;
+	using namespace calyx::platform::android;
+
+	event_t eve;
+	eve.type = event_type_e::interact;
+	eve.interact_event_data.inner_type = interact_event_e::key_input;
+	eve.interact_event_data.payload = i_keyCode;
+	s_event_buffer.push(eve);
+}
+
+void android_push_orientation_event(const f32 i_azimuth, const f32 i_pitch, const f32 i_roll)
+{
+	using namespace calyx;
+	using namespace calyx::platform::android;
+
+	event_t eve;
+	eve.type = event_type_e::interact;
+	eve.interact_event_data.inner_type = interact_event_e::orientation_input;
+	eve.interact_event_data.payload = 0;
+	eve.interact_event_data.extpayload[0] = i_azimuth;
+	eve.interact_event_data.extpayload[1] = i_pitch;
+	eve.interact_event_data.extpayload[2] = i_roll;
+	s_event_buffer.push(eve);
 }

@@ -265,7 +265,7 @@ void initialize()
 	CLOVER_VERBOSE("Initializing essential systems...");
 
 	// init sub-systems: generic worker threads
-	subSystems->task_manager = allocators->subsystems_allocator.allocate<refrain2::TaskManager>();
+	subSystems->task_manager = allocators->subsystems_allocator.allocate_with_description<refrain2::TaskManager>("refrain2::TaskManager");
 	subSystems->task_manager->Initialize(2);
 	subSystems->task_manager->StartAllTaskingThreads();
 	CLOVER_VERBOSE("refrain started");

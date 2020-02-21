@@ -15,8 +15,10 @@ struct context_attribs {
 	const_cstr									window_title;
 	u32											window_offset_left;
 	u32											window_offset_top;
+	f32											window_scale;		// if it's 0.0f, we prefer window_width and window_height
 	u32											window_width;
 	u32											window_height;
+	c8											data_path[1024];
 	bool										render_in_main_thread;
 };
 

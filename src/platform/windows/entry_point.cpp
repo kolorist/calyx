@@ -12,6 +12,8 @@ s32 main(s32 argc, const_cstr* argv)
 	memset(commonCtx, 0, sizeof(context_attribs));
 	setup_surface(commonCtx);
 
+	strcpy(commonCtx->data_path, "");
+
 	platform::windows::initialize();
 	platform::windows::run();
 	platform::windows::clean_up();
