@@ -1,5 +1,9 @@
 #pragma once
 
+/* key events */
+#define CLX_BACK								0x00000008
+#define CLX_RETURN								0x0000000D
+
 /* mouse events */
 #define CLX_MOUSE_LEFT_BUTTON					0x00000001
 #define CLX_MOUSE_RIGHT_BUTTON					0x00000002
