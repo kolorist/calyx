@@ -1,8 +1,8 @@
 #pragma once
 
-#include <helich/Allocator.h>
-#include <helich/AllocSchemes.h>
-#include <helich/TrackingPolicies.h>
+#include <helich/allocator.h>
+#include <helich/alloc_schemes.h>
+#include <helich/tracking_policies.h>
 
 namespace calyx
 {
