@@ -266,7 +266,7 @@ void initialize()
 
 	// init sub-systems: generic worker threads
 	subSystems->task_manager = allocators->subsystems_allocator.allocate_with_description<refrain2::TaskManager>("refrain2::TaskManager");
-	subSystems->task_manager->Initialize(2);
+	subSystems->task_manager->Initialize(systemInfo->num_logical_processors - 3);
 	subSystems->task_manager->StartAllTaskingThreads();
 	CLOVER_VERBOSE("refrain started");
 
