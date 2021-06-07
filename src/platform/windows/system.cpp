@@ -3,9 +3,9 @@
 #include <helich.h>
 #include <refrain2.h>
 
-#include <clover/Logger.h>
-#include <clover/SinkTopic.h>
-#include <clover/VSOutputSink.h>
+#include <clover/logger.h>
+#include <clover/sink_topic.h>
+#include <clover/vs_output_sink.h>
 
 #include <calyx/context.h>
 #include <calyx/life_cycle.h>
